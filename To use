@@ -1,8 +1,0 @@
-# Enter the nix shell
-nix-shell
-
-# Build and run
-echo "Hello, World!" | cargo run
-
-# Or build release
-cargo build --release
