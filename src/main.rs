@@ -1,6 +1,7 @@
 use std::io::{self, IsTerminal, Read, Write};
 
 use arboard::Clipboard;
+use clap::Parser;
 use crossterm::{
     event::{self, Event, KeyCode, KeyEvent, KeyModifiers},
     execute,
@@ -14,6 +15,15 @@ use ratatui::{
     Frame, Terminal,
 };
 use tui_textarea::TextArea;
+
+#[derive(Parser, Debug)]
+#[command(name = "tui-editor")]
+#[command(about = "A TUI text editor that can read from stdin or clipboard")]
+struct Args {
+    /// Output to clipboard instead of stdout
+    #[arg(short, long)]
+    clipboard: bool,
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum DialogOption {
@@ -140,7 +150,15 @@ fn get_clipboard_content() -> String {
         .unwrap()
 }
 
+fn set_clipboard_content(content: &str) -> Result<(), arboard::Error> {
+    let mut clipboard = Clipboard::new()?;
+    clipboard.set_text(content)?;
+    Ok(())
+}
+
 fn main() -> io::Result<()> {
+    let args = Args::parse();
+
     // Read input from STDIN if it's not a terminal (i.e., piped input)
     // Otherwise, read from clipboard
     let initial_content = if !io::stdin().is_terminal() {
@@ -178,11 +196,17 @@ fn main() -> io::Result<()> {
     disable_raw_mode()?;
     execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
 
-    // Output to STDOUT if requested
+    // Output if requested
     if app.exit_with_output {
         let content = app.get_content();
-        io::stdout().write_all(content.as_bytes())?;
-        io::stdout().write_all(b"\n")?;
+        if args.clipboard {
+            set_clipboard_content(&content).map_err(|e| {
+                io::Error::new(io::ErrorKind::Other, format!("Clipboard error: {}", e))
+            })?;
+        } else {
+            io::stdout().write_all(content.as_bytes())?;
+            io::stdout().write_all(b"\n")?;
+        }
         Ok(())
     } else {
         std::process::exit(1);

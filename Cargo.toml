@@ -8,3 +8,4 @@ ratatui = "0.29"
 tui-textarea = "0.7"
 crossterm = "0.28"
 arboard = { version = "3", features = ["wayland-data-control"] }
+clap = { version = "4", features = ["derive"] }
