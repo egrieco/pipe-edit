@@ -36,7 +36,7 @@ impl<'a> App<'a> {
         textarea.set_block(
             Block::default()
                 .borders(Borders::ALL)
-                .title("Editor (Shift+Enter: Save & Exit, Esc: Menu)"),
+                .title("Editor (Alt+Enter: Exit and Pipe Output, Esc: Menu)"),
         );
 
         Self {
@@ -64,7 +64,7 @@ impl<'a> App<'a> {
         match key {
             KeyEvent {
                 code: KeyCode::Enter,
-                modifiers: KeyModifiers::SHIFT,
+                modifiers: KeyModifiers::ALT,
                 ..
             } => {
                 self.should_exit = true;
@@ -103,21 +103,19 @@ impl<'a> App<'a> {
                     DialogOption::PipeOut => DialogOption::Cancel,
                 };
             }
-            KeyCode::Enter => {
-                match self.selected_option {
-                    DialogOption::Cancel => {
-                        self.show_dialog = false;
-                    }
-                    DialogOption::Abort => {
-                        self.should_exit = true;
-                        self.exit_with_output = false;
-                    }
-                    DialogOption::PipeOut => {
-                        self.should_exit = true;
-                        self.exit_with_output = true;
-                    }
+            KeyCode::Enter => match self.selected_option {
+                DialogOption::Cancel => {
+                    self.show_dialog = false;
                 }
-            }
+                DialogOption::Abort => {
+                    self.should_exit = true;
+                    self.exit_with_output = false;
+                }
+                DialogOption::PipeOut => {
+                    self.should_exit = true;
+                    self.exit_with_output = true;
+                }
+            },
             KeyCode::Char('c') | KeyCode::Char('C') => {
                 self.show_dialog = false;
             }
