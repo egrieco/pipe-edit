@@ -1,5 +1,6 @@
 use std::io::{self, IsTerminal, Read, Write};
 
+use arboard::Clipboard;
 use crossterm::{
     event::{self, Event, KeyCode, KeyEvent, KeyModifiers},
     execute,
@@ -132,14 +133,21 @@ impl<'a> App<'a> {
     }
 }
 
+fn get_clipboard_content() -> String {
+    Clipboard::new()
+        .and_then(|mut clipboard| clipboard.get_text())
+        .unwrap_or_default()
+}
+
 fn main() -> io::Result<()> {
     // Read input from STDIN if it's not a terminal (i.e., piped input)
+    // Otherwise, read from clipboard
     let initial_content = if !io::stdin().is_terminal() {
         let mut buffer = String::new();
         io::stdin().read_to_string(&mut buffer)?;
         buffer
     } else {
-        String::new()
+        get_clipboard_content()
     };
 
     // Set up terminal
