@@ -735,6 +735,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "pipe-edit"
+version = "0.1.0"
+dependencies = [
+ "arboard",
+ "clap",
+ "crossterm",
+ "ratatui",
+ "tui-textarea",
+]
+
+[[package]]
 name = "pkg-config"
 version = "0.3.32"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1006,17 +1017,6 @@ dependencies = [
  "memchr",
  "nom",
  "petgraph",
-]
-
-[[package]]
-name = "tui-editor"
-version = "0.1.0"
-dependencies = [
- "arboard",
- "clap",
- "crossterm",
- "ratatui",
- "tui-textarea",
 ]
 
 [[package]]
