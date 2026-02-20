@@ -17,8 +17,8 @@ use ratatui::{
 use tui_textarea::TextArea;
 
 #[derive(Parser, Debug)]
-#[command(name = "tui-editor")]
-#[command(about = "A TUI text editor that can read from stdin or clipboard")]
+#[command(name = "pipe-edit")]
+#[command(about = "A TUI editor for manually modifying data piped from stdin or the clipboard.")]
 struct Args {
     /// Output to clipboard instead of stdout
     #[arg(short, long)]
