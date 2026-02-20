@@ -136,7 +136,8 @@ impl<'a> App<'a> {
 fn get_clipboard_content() -> String {
     Clipboard::new()
         .and_then(|mut clipboard| clipboard.get_text())
-        .unwrap_or_default()
+        // TODO handle these errors more gracefully
+        .unwrap()
 }
 
 fn main() -> io::Result<()> {
