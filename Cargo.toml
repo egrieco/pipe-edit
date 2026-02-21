@@ -1,7 +1,26 @@
 [package]
 name = "pipe-edit"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
+license = "BSD-3-Clause" # https://spdx.org/licenses/
+authors = ["Elio Grieco <grieco@egx.com>"]
+description = "A TUI editor for manually modifying data piped from stdin or the clipboard."
+repository = "https://github.com/egrieco/pipe-edit"
+readme = "README.md"
+keywords = [
+    "pipe",
+    "editor",
+    "linux",
+    "cli",
+    "clipboard",
+] # free text, 5 keywords max
+categories = ["command-line-utilities"] # https://crates.io/category_slugs
+exclude = [".vscode/*", ".gitignore", ".aider.*"]
+# https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[[bin]]
+name = "pipe-edit"
+path = "src/main.rs"
 
 [dependencies]
 ratatui = "0.29"
