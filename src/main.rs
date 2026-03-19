@@ -71,6 +71,74 @@ impl<'a> App<'a> {
         }
     }
 
+    fn join_lines(&mut self) {
+        let (current_row, _) = self.textarea.cursor();
+        let lines = self.textarea.lines();
+        
+        // Check if there's a line below to join with
+        if current_row + 1 >= lines.len() {
+            return;
+        }
+
+        let current_line = lines[current_row].to_string();
+        let next_line = lines[current_row + 1].to_string();
+
+        // Trim trailing whitespace from current line and leading whitespace from next line
+        let current_trimmed = current_line.trim_end();
+        let next_trimmed = next_line.trim_start();
+
+        // Join with a single space (or no space if either part is empty)
+        let joined = if current_trimmed.is_empty() {
+            next_trimmed.to_string()
+        } else if next_trimmed.is_empty() {
+            current_trimmed.to_string()
+        } else {
+            format!("{} {}", current_trimmed, next_trimmed)
+        };
+
+        // Calculate the new cursor position (at the join point)
+        let new_cursor_col = current_trimmed.len();
+
+        // Move to the end of the current line
+        self.textarea.move_cursor(tui_textarea::CursorMove::End);
+        
+        // Delete from cursor to end of line (in case there's trailing whitespace)
+        // Then delete the newline and the next line's content
+        // We'll rebuild the content by selecting and replacing
+
+        // Move to start of current line
+        self.textarea.move_cursor(tui_textarea::CursorMove::Head);
+        
+        // Select the entire current line
+        self.textarea.move_cursor(tui_textarea::CursorMove::End);
+        self.textarea.start_selection();
+        self.textarea.move_cursor(tui_textarea::CursorMove::Head);
+        
+        // Delete current line content
+        self.textarea.cut();
+        
+        // Insert the joined content (without the next line yet)
+        self.textarea.insert_str(&joined);
+        
+        // Now delete the next line (which is now at current_row + 1)
+        // Move to the end of current line
+        self.textarea.move_cursor(tui_textarea::CursorMove::End);
+        
+        // Delete the newline and the entire next line
+        self.textarea.delete_newline();
+        
+        // Delete remaining content of what was the next line
+        self.textarea.start_selection();
+        self.textarea.move_cursor(tui_textarea::CursorMove::End);
+        self.textarea.cut();
+
+        // Position cursor at the join point
+        self.textarea.move_cursor(tui_textarea::CursorMove::Head);
+        for _ in 0..new_cursor_col {
+            self.textarea.move_cursor(tui_textarea::CursorMove::Forward);
+        }
+    }
+
     fn handle_editor_key_event(&mut self, key: KeyEvent) {
         match key {
             KeyEvent {
@@ -88,6 +156,13 @@ impl<'a> App<'a> {
             } => {
                 self.show_dialog = true;
                 self.selected_option = DialogOption::Cancel;
+            }
+            KeyEvent {
+                code: KeyCode::Char('j'),
+                modifiers: KeyModifiers::CONTROL,
+                ..
+            } => {
+                self.join_lines();
             }
             _ => {
                 self.textarea.input(key);
