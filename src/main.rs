@@ -153,6 +153,15 @@ impl<'a> App<'a> {
                 self.exit_with_output = true;
             }
             KeyEvent {
+                code: KeyCode::Enter,
+                modifiers: KeyModifiers::NONE,
+                ..
+            } if self.single_line_mode => {
+                // In single-line mode, Enter exits and outputs
+                self.should_exit = true;
+                self.exit_with_output = true;
+            }
+            KeyEvent {
                 code: KeyCode::Esc,
                 modifiers: KeyModifiers::NONE,
                 ..
