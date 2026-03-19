@@ -476,7 +476,7 @@ impl<'a> App<'a> {
             // Exit without output: Ctrl+W
             KeyEvent {
                 code: KeyCode::Char('w'),
-                modifiers: KeyMod,
+                modifiers: KeyModifiers::CONTROL,
                 ..
             } => {
                 self.should_exit = true;
