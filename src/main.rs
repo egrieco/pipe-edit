@@ -11,7 +11,7 @@ use ratatui::{
     Frame, Terminal,
     backend::CrosstermBackend,
     layout::{Constraint, Direction, Layout, Rect},
-    style::{Color, Style},
+    style::{Color, Modifier, Style},
     widgets::{Block, Borders, Clear, Paragraph},
 };
 use tui_textarea::TextArea;
@@ -61,6 +61,90 @@ enum DialogOption {
     PipeOut,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct Match {
+    row: usize,
+    col_start: usize,
+    col_end: usize,
+}
+
+#[derive(Debug, Clone)]
+struct SearchState {
+    active: bool,
+    query: String,
+    matches: Vec<Match>,
+    current_match_index: Option<usize>,
+}
+
+impl SearchState {
+    fn new() -> Self {
+        Self {
+            active: false,
+            query: String::new(),
+            matches: Vec::new(),
+            current_match_index: None,
+        }
+    }
+
+    fn find_matches(&mut self, lines: &[String]) {
+        self.matches.clear();
+        self.current_match_index = None;
+
+        if self.query.is_empty() {
+            return;
+        }
+
+        for (row, line) in lines.iter().enumerate() {
+            let mut start = 0;
+            while let Some(pos) = line[start..].find(&self.query) {
+                let col_start = start + pos;
+                let col_end = col_start + self.query.len();
+                self.matches.push(Match {
+                    row,
+                    col_start,
+                    col_end,
+                });
+                start = col_start + 1;
+            }
+        }
+
+        if !self.matches.is_empty() {
+            self.current_match_index = Some(0);
+        }
+    }
+
+    fn next_match(&mut self) {
+        if self.matches.is_empty() {
+            return;
+        }
+        self.current_match_index = Some(match self.current_match_index {
+            Some(idx) => (idx + 1) % self.matches.len(),
+            None => 0,
+        });
+    }
+
+    fn prev_match(&mut self) {
+        if self.matches.is_empty() {
+            return;
+        }
+        self.current_match_index = Some(match self.current_match_index {
+            Some(idx) => {
+                if idx == 0 {
+                    self.matches.len() - 1
+                } else {
+                    idx - 1
+                }
+            }
+            None => self.matches.len() - 1,
+        });
+    }
+
+    fn current_match(&self) -> Option<&Match> {
+        self.current_match_index
+            .and_then(|idx| self.matches.get(idx))
+    }
+}
+
 struct App<'a> {
     textarea: TextArea<'a>,
     show_dialog: bool,
@@ -68,6 +152,7 @@ struct App<'a> {
     should_exit: bool,
     exit_with_output: bool,
     single_line_mode: bool,
+    search: SearchState,
 }
 
 impl<'a> App<'a> {
@@ -77,7 +162,7 @@ impl<'a> App<'a> {
         textarea.set_block(
             Block::default()
                 .borders(Borders::ALL)
-                .title("Editor (Alt+Enter: Exit and Pipe Output, Esc: Menu)"),
+                .title("Editor (Alt+Enter: Exit and Pipe Output, Esc: Menu, Ctrl+F: Search)"),
         );
 
         Self {
@@ -87,6 +172,7 @@ impl<'a> App<'a> {
             should_exit: false,
             exit_with_output: false,
             single_line_mode,
+            search: SearchState::new(),
         }
     }
 
@@ -102,9 +188,57 @@ impl<'a> App<'a> {
         }
     }
 
+    fn update_search_matches(&mut self) {
+        let lines: Vec<String> = self.textarea.lines().iter().map(|s| s.to_string()).collect();
+        self.search.find_matches(&lines);
+        self.update_search_highlighting();
+    }
+
+    fn update_search_highlighting(&mut self) {
+        // Clear any existing search style
+        let _ = self.textarea.set_search_pattern("");
+
+        if !self.search.query.is_empty() {
+            // Use regex escaping for the search pattern
+            let escaped = regex::escape(&self.search.query);
+            let _ = self.textarea.set_search_pattern(&escaped);
+            self.textarea.set_search_style(
+                Style::default()
+                    .bg(Color::Yellow)
+                    .fg(Color::Black)
+                    .add_modifier(Modifier::BOLD),
+            );
+        }
+    }
+
+    fn jump_to_current_match(&mut self) {
+        if let Some(m) = self.search.current_match().cloned() {
+            // Move cursor to the match position
+            let row = m.row;
+            let col = m.col_start;
+
+            // Move to the beginning first
+            self.textarea.move_cursor(tui_textarea::CursorMove::Top);
+            self.textarea.move_cursor(tui_textarea::CursorMove::Head);
+
+            // Move down to the correct row
+            for _ in 0..row {
+                self.textarea.move_cursor(tui_textarea::CursorMove::Down);
+            }
+
+            // Move to the correct column
+            for _ in 0..col {
+                self.textarea
+                    .move_cursor(tui_textarea::CursorMove::Forward);
+            }
+        }
+    }
+
     fn handle_key_event(&mut self, key: KeyEvent) {
         if self.show_dialog {
             self.handle_dialog_key_event(key);
+        } else if self.search.active {
+            self.handle_search_key_event(key);
         } else {
             self.handle_editor_key_event(key);
         }
@@ -164,8 +298,127 @@ impl<'a> App<'a> {
         }
     }
 
+    fn handle_search_key_event(&mut self, key: KeyEvent) {
+        match key {
+            KeyEvent {
+                code: KeyCode::Esc,
+                modifiers: KeyModifiers::NONE,
+                ..
+            } => {
+                // Exit search mode
+                self.search.active = false;
+                self.search.query.clear();
+                self.search.matches.clear();
+                self.search.current_match_index = None;
+                // Clear search highlighting
+                let _ = self.textarea.set_search_pattern("");
+            }
+            KeyEvent {
+                code: KeyCode::Enter,
+                ..
+            } => {
+                // Jump to current match and exit search mode
+                self.jump_to_current_match();
+                self.search.active = false;
+            }
+            KeyEvent {
+                code: KeyCode::Char('g'),
+                modifiers,
+                ..
+            } if modifiers.contains(KeyModifiers::CONTROL)
+                && modifiers.contains(KeyModifiers::SHIFT) =>
+            {
+                // Previous match
+                self.search.prev_match();
+                self.jump_to_current_match();
+            }
+            KeyEvent {
+                code: KeyCode::Char('g'),
+                modifiers: KeyModifiers::CONTROL,
+                ..
+            } => {
+                // Next match
+                self.search.next_match();
+                self.jump_to_current_match();
+            }
+            KeyEvent {
+                code: KeyCode::Char('G'),
+                modifiers,
+                ..
+            } if modifiers.contains(KeyModifiers::CONTROL) => {
+                // Ctrl+Shift+G (capital G) - Previous match
+                self.search.prev_match();
+                self.jump_to_current_match();
+            }
+            KeyEvent {
+                code: KeyCode::Backspace,
+                ..
+            } => {
+                self.search.query.pop();
+                self.update_search_matches();
+            }
+            KeyEvent {
+                code: KeyCode::Char(c),
+                modifiers,
+                ..
+            } if !modifiers.contains(KeyModifiers::CONTROL)
+                && !modifiers.contains(KeyModifiers::ALT) =>
+            {
+                self.search.query.push(c);
+                self.update_search_matches();
+            }
+            _ => {}
+        }
+    }
+
     fn handle_editor_key_event(&mut self, key: KeyEvent) {
         match key {
+            // Search: Ctrl+F
+            KeyEvent {
+                code: KeyCode::Char('f'),
+                modifiers: KeyModifiers::CONTROL,
+                ..
+            } => {
+                self.search.active = true;
+                self.search.query.clear();
+                self.search.matches.clear();
+                self.search.current_match_index = None;
+            }
+            // Next match: Ctrl+G
+            KeyEvent {
+                code: KeyCode::Char('g'),
+                modifiers: KeyModifiers::CONTROL,
+                ..
+            } => {
+                if !self.search.matches.is_empty() {
+                    self.search.next_match();
+                    self.jump_to_current_match();
+                }
+            }
+            // Previous match: Ctrl+Shift+G
+            KeyEvent {
+                code: KeyCode::Char('g'),
+                modifiers,
+                ..
+            } if modifiers.contains(KeyModifiers::CONTROL)
+                && modifiers.contains(KeyModifiers::SHIFT) =>
+            {
+                if !self.search.matches.is_empty() {
+                    self.search.prev_match();
+                    self.jump_to_current_match();
+                }
+            }
+            // Previous match: Ctrl+G with capital G
+            KeyEvent {
+                code: KeyCode::Char('G'),
+                modifiers,
+                ..
+            } if modifiers.contains(KeyModifiers::CONTROL) => {
+                if !self.search.matches.is_empty() {
+                    self.search.prev_match();
+                    self.jump_to_current_match();
+                }
+            }
             // Exit with output: Alt+Enter
             KeyEvent {
                 code: KeyCode::Enter,
@@ -223,7 +476,7 @@ impl<'a> App<'a> {
             // Exit without output: Ctrl+W
             KeyEvent {
                 code: KeyCode::Char('w'),
-                modifiers: KeyModifiers::CONTROL,
+                modifiers: KeyMod,
                 ..
             } => {
                 self.should_exit = true;
@@ -455,12 +708,65 @@ fn main() -> io::Result<()> {
 fn ui(f: &mut Frame, app: &App) {
     let size = f.area();
 
-    // Render the textarea
-    f.render_widget(&app.textarea, size);
+    if app.search.active {
+        // When search is active, split the screen to show search bar at bottom
+        let chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([Constraint::Min(1), Constraint::Length(3)])
+            .split(size);
+
+        // Render the textarea in the main area
+        f.render_widget(&app.textarea, chunks[0]);
+
+        // Render the search bar
+        render_search_bar(f, app, chunks[1]);
+    } else {
+        // Render the textarea full screen
+        f.render_widget(&app.textarea, size);
+    }
 
     // Render dialog if shown
     if app.show_dialog {
         render_dialog(f, app);
+    }
+}
+
+fn render_search_bar(f: &mut Frame, app: &App, area: Rect) {
+    let match_info = if app.search.matches.is_empty() {
+        if app.search.query.is_empty() {
+            String::new()
+        } else {
+            " (no matches)".to_string()
+        }
+    } else {
+        let current = app.search.current_match_index.map(|i| i + 1).unwrap_or(0);
+        let total = app.search.matches.len();
+        format!(" ({}/{})", current, total)
+    };
+
+    let title = format!(
+        "Search{} (Enter: jump, Esc: cancel, Ctrl+G/Ctrl+Shift+G: next/prev)",
+        match_info
+    );
+
+    let search_block = Block::default()
+        .borders(Borders::ALL)
+        .title(title)
+        .style(Style::default().bg(Color::DarkGray));
+
+    let inner_area = search_block.inner(area);
+    f.render_widget(search_block, area);
+
+    let search_text = Paragraph::new(app.search.query.as_str())
+        .style(Style::default().fg(Color::White).bg(Color::DarkGray));
+
+    f.render_widget(search_text, inner_area);
+
+    // Show cursor in search bar
+    let cursor_x = inner_area.x + app.search.query.len() as u16;
+    let cursor_y = inner_area.y;
+    if cursor_x < inner_area.x + inner_area.width {
+        f.set_cursor_position((cursor_x, cursor_y));
     }
 }
 
