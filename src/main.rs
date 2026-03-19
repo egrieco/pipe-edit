@@ -185,11 +185,36 @@ impl<'a> App<'a> {
                 self.textarea.delete_next_word();
             }
             // Ctrl-Backspace or Shift-Backspace: delete word to the left
+            // Some terminals send Ctrl-Backspace as Backspace with CONTROL modifier
             KeyEvent {
                 code: KeyCode::Backspace,
                 modifiers,
                 ..
             } if modifiers.contains(KeyModifiers::CONTROL) || modifiers.contains(KeyModifiers::SHIFT) => {
+                self.textarea.delete_word();
+            }
+            // Some terminals send Ctrl-Backspace as Ctrl-H
+            KeyEvent {
+                code: KeyCode::Char('h'),
+                modifiers: KeyModifiers::CONTROL,
+                ..
+            } => {
+                self.textarea.delete_word();
+            }
+            // Some terminals send Ctrl-Backspace as Char('\x7f') with CONTROL
+            KeyEvent {
+                code: KeyCode::Char('\x7f'),
+                modifiers,
+                ..
+            } if modifiers.contains(KeyModifiers::CONTROL) => {
+                self.textarea.delete_word();
+            }
+            // Some terminals send Ctrl-Backspace as Char('\x08') (backspace char)
+            KeyEvent {
+                code: KeyCode::Char('\x08'),
+                modifiers,
+                ..
+            } if modifiers.contains(KeyModifiers::CONTROL) => {
                 self.textarea.delete_word();
             }
             _ => {
