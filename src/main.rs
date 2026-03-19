@@ -5,14 +5,14 @@ use clap::Parser;
 use crossterm::{
     event::{self, Event, KeyCode, KeyEvent, KeyModifiers},
     execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
 };
 use ratatui::{
+    Frame, Terminal,
     backend::CrosstermBackend,
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Style},
     widgets::{Block, Borders, Clear, Paragraph},
-    Frame, Terminal,
 };
 use tui_textarea::TextArea;
 
@@ -23,7 +23,7 @@ mod built_info {
 
 fn get_version_string() -> String {
     let version = built_info::PKG_VERSION;
-    
+
     let git_info = match (built_info::GIT_COMMIT_HASH_SHORT, built_info::GIT_DIRTY) {
         (Some(commit), Some(dirty)) => {
             let dirty_str = if dirty { "-dirty" } else { "" };
@@ -32,7 +32,7 @@ fn get_version_string() -> String {
         (Some(commit), None) => format!(" (git: {})", commit),
         _ => String::new(),
     };
-    
+
     format!("{}{}", version, git_info)
 }
 
@@ -92,13 +92,10 @@ impl<'a> App<'a> {
 
     fn get_content(&self) -> String {
         let content = self.textarea.lines().join("\n");
-        
+
         if self.single_line_mode {
             // Join all lines and squeeze whitespace runs into single spaces
-            let single_line: String = content
-                .split_whitespace()
-                .collect::<Vec<&str>>()
-                .join(" ");
+            let single_line: String = content.split_whitespace().collect::<Vec<&str>>().join(" ");
             single_line
         } else {
             content
@@ -116,7 +113,7 @@ impl<'a> App<'a> {
     fn join_lines(&mut self) {
         let (current_row, _) = self.textarea.cursor();
         let lines = self.textarea.lines();
-        
+
         // Check if there's a line below to join with
         if current_row + 1 >= lines.len() {
             return;
@@ -144,19 +141,19 @@ impl<'a> App<'a> {
         // Select from start of current line to end of next line, then replace with joined content
         // First, move to start of current line
         self.textarea.move_cursor(tui_textarea::CursorMove::Head);
-        
+
         // Start selection
         self.textarea.start_selection();
-        
+
         // Move to next line
         self.textarea.move_cursor(tui_textarea::CursorMove::Down);
-        
+
         // Move to end of that line
         self.textarea.move_cursor(tui_textarea::CursorMove::End);
-        
+
         // Cut the selection (both lines)
         self.textarea.cut();
-        
+
         // Insert the joined content
         self.textarea.insert_str(&joined);
 
@@ -206,7 +203,9 @@ impl<'a> App<'a> {
                 code: KeyCode::Delete,
                 modifiers,
                 ..
-            } if modifiers.contains(KeyModifiers::CONTROL) || modifiers.contains(KeyModifiers::SHIFT) => {
+            } if modifiers.contains(KeyModifiers::CONTROL)
+                || modifiers.contains(KeyModifiers::SHIFT) =>
+            {
                 self.textarea.delete_next_word();
             }
             // Ctrl-Backspace or Shift-Backspace: delete word to the left
@@ -215,7 +214,9 @@ impl<'a> App<'a> {
                 code: KeyCode::Backspace,
                 modifiers,
                 ..
-            } if modifiers.contains(KeyModifiers::CONTROL) || modifiers.contains(KeyModifiers::SHIFT) => {
+            } if modifiers.contains(KeyModifiers::CONTROL)
+                || modifiers.contains(KeyModifiers::SHIFT) =>
+            {
                 self.textarea.delete_word();
             }
             // Some terminals send Ctrl-Backspace as Ctrl-H
@@ -311,10 +312,7 @@ fn set_clipboard_content(content: &str) -> Result<(), arboard::Error> {
 
 /// Process input for single-line mode: join all lines and squeeze whitespace
 fn process_single_line_input(input: &str) -> String {
-    input
-        .split_whitespace()
-        .collect::<Vec<&str>>()
-        .join(" ")
+    input.split_whitespace().collect::<Vec<&str>>().join(" ")
 }
 
 fn main() -> io::Result<()> {
@@ -414,7 +412,7 @@ fn ui(f: &mut Frame, app: &App) {
 fn render_dialog(f: &mut Frame, app: &App) {
     let area = f.area();
 
-    //Calculate dialog size and position
+    // Calculate dialog size and position
     let dialog_width = 50.min(area.width.saturating_sub(4));
     let dialog_height = 7;
     let dialog_x = (area.width.saturating_sub(dialog_width)) / 2;
