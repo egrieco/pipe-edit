@@ -166,6 +166,7 @@ impl<'a> App<'a> {
 
     fn handle_editor_key_event(&mut self, key: KeyEvent) {
         match key {
+            // Exit with output: Alt+Enter
             KeyEvent {
                 code: KeyCode::Enter,
                 modifiers: KeyModifiers::ALT,
@@ -173,6 +174,60 @@ impl<'a> App<'a> {
             } => {
                 self.should_exit = true;
                 self.exit_with_output = true;
+            }
+            // Exit with output: Ctrl+Enter
+            KeyEvent {
+                code: KeyCode::Enter,
+                modifiers: KeyModifiers::CONTROL,
+                ..
+            } => {
+                self.should_exit = true;
+                self.exit_with_output = true;
+            }
+            // Exit with output: Shift+Enter
+            KeyEvent {
+                code: KeyCode::Enter,
+                modifiers: KeyModifiers::SHIFT,
+                ..
+            } => {
+                self.should_exit = true;
+                self.exit_with_output = true;
+            }
+            // Exit with output: Ctrl+D
+            KeyEvent {
+                code: KeyCode::Char('d'),
+                modifiers: KeyModifiers::CONTROL,
+                ..
+            } => {
+                self.should_exit = true;
+                self.exit_with_output = true;
+            }
+            // Exit without output: Ctrl+C
+            KeyEvent {
+                code: KeyCode::Char('c'),
+                modifiers: KeyModifiers::CONTROL,
+                ..
+            } => {
+                self.should_exit = true;
+                self.exit_with_output = false;
+            }
+            // Exit without output: Ctrl+Q
+            KeyEvent {
+                code: KeyCode::Char('q'),
+                modifiers: KeyModifiers::CONTROL,
+                ..
+            } => {
+                self.should_exit = true;
+                self.exit_with_output = false;
+            }
+            // Exit without output: Ctrl+W
+            KeyEvent {
+                code: KeyCode::Char('w'),
+                modifiers: KeyModifiers::CONTROL,
+                ..
+            } => {
+                self.should_exit = true;
+                self.exit_with_output = false;
             }
             KeyEvent {
                 code: KeyCode::Enter,
