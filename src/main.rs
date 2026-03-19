@@ -23,6 +23,10 @@ struct Args {
     /// Output to clipboard instead of stdout
     #[arg(short, long)]
     clipboard: bool,
+
+    /// Join all lines into a single line, squeezing whitespace
+    #[arg(short, long)]
+    single_line: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -38,10 +42,11 @@ struct App<'a> {
     selected_option: DialogOption,
     should_exit: bool,
     exit_with_output: bool,
+    single_line_mode: bool,
 }
 
 impl<'a> App<'a> {
-    fn new(initial_content: String) -> Self {
+    fn new(initial_content: String, single_line_mode: bool) -> Self {
         let lines: Vec<String> = initial_content.lines().map(String::from).collect();
         let mut textarea = TextArea::new(lines);
         textarea.set_block(
@@ -56,11 +61,23 @@ impl<'a> App<'a> {
             selected_option: DialogOption::Cancel,
             should_exit: false,
             exit_with_output: false,
+            single_line_mode,
         }
     }
 
     fn get_content(&self) -> String {
-        self.textarea.lines().join("\n")
+        let content = self.textarea.lines().join("\n");
+        
+        if self.single_line_mode {
+            // Join all lines and squeeze whitespace runs into single spaces
+            let single_line: String = content
+                .split_whitespace()
+                .collect::<Vec<&str>>()
+                .join(" ");
+            single_line
+        } else {
+            content
+        }
     }
 
     fn handle_key_event(&mut self, key: KeyEvent) {
@@ -217,6 +234,14 @@ fn set_clipboard_content(content: &str) -> Result<(), arboard::Error> {
     Ok(())
 }
 
+/// Process input for single-line mode: join all lines and squeeze whitespace
+fn process_single_line_input(input: &str) -> String {
+    input
+        .split_whitespace()
+        .collect::<Vec<&str>>()
+        .join(" ")
+}
+
 fn main() -> io::Result<()> {
     let args = Args::parse();
 
@@ -230,6 +255,13 @@ fn main() -> io::Result<()> {
         get_clipboard_content()
     };
 
+    // Process input for single-line mode if enabled
+    let initial_content = if args.single_line {
+        process_single_line_input(&initial_content)
+    } else {
+        initial_content
+    };
+
     // Set up terminal
     enable_raw_mode()?;
     let mut stderr = io::stderr();
@@ -238,7 +270,7 @@ fn main() -> io::Result<()> {
     let mut terminal = Terminal::new(backend)?;
 
     // Create app
-    let mut app = App::new(initial_content);
+    let mut app = App::new(initial_content, args.single_line);
 
     // Main loop
     loop {
@@ -261,12 +293,24 @@ fn main() -> io::Result<()> {
     if app.exit_with_output {
         let content = app.get_content();
         if args.clipboard {
-            set_clipboard_content(&content).map_err(|e| {
+            // For clipboard, strip trailing CR/LF in single-line mode
+            let output = if args.single_line {
+                content.trim_end_matches(['\r', '\n'])
+            } else {
+                &content
+            };
+            set_clipboard_content(output).map_err(|e| {
                 io::Error::new(io::ErrorKind::Other, format!("Clipboard error: {}", e))
             })?;
         } else {
-            io::stdout().write_all(content.as_bytes())?;
-            io::stdout().write_all(b"\n")?;
+            if args.single_line {
+                // In single-line mode, don't add trailing newline
+                let output = content.trim_end_matches(['\r', '\n']);
+                io::stdout().write_all(output.as_bytes())?;
+            } else {
+                io::stdout().write_all(content.as_bytes())?;
+                io::stdout().write_all(b"\n")?;
+            }
         }
         Ok(())
     } else {
