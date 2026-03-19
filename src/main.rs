@@ -321,32 +321,21 @@ impl<'a> App<'a> {
                 self.jump_to_current_match();
                 self.search.active = false;
             }
+            // Next match: Ctrl+F
             KeyEvent {
-                code: KeyCode::Char('g'),
-                modifiers,
+                code: KeyCode::Char('f'),
+                modifiers: KeyModifiers::CONTROL,
                 ..
-            } if modifiers.contains(KeyModifiers::CONTROL)
-                && modifiers.contains(KeyModifiers::SHIFT) =>
-            {
-                // Previous match
-                self.search.prev_match();
+            } => {
+                self.search.next_match();
                 self.jump_to_current_match();
             }
+            // Previous match: Ctrl+G
             KeyEvent {
                 code: KeyCode::Char('g'),
                 modifiers: KeyModifiers::CONTROL,
                 ..
             } => {
-                // Next match
-                self.search.next_match();
-                self.jump_to_current_match();
-            }
-            KeyEvent {
-                code: KeyCode::Char('G'),
-                modifiers,
-                ..
-            } if modifiers.contains(KeyModifiers::CONTROL) => {
-                // Ctrl+Shift+G (capital G) - Previous match
                 self.search.prev_match();
                 self.jump_to_current_match();
             }
@@ -384,36 +373,12 @@ impl<'a> App<'a> {
                 self.search.matches.clear();
                 self.search.current_match_index = None;
             }
-            // Next match: Ctrl+G
+            // Previous match: Ctrl+G (when not in search mode)
             KeyEvent {
                 code: KeyCode::Char('g'),
                 modifiers: KeyModifiers::CONTROL,
                 ..
             } => {
-                if !self.search.matches.is_empty() {
-                    self.search.next_match();
-                    self.jump_to_current_match();
-                }
-            }
-            // Previous match: Ctrl+Shift+G
-            KeyEvent {
-                code: KeyCode::Char('g'),
-                modifiers,
-                ..
-            } if modifiers.contains(KeyModifiers::CONTROL)
-                && modifiers.contains(KeyModifiers::SHIFT) =>
-            {
-                if !self.search.matches.is_empty() {
-                    self.search.prev_match();
-                    self.jump_to_current_match();
-                }
-            }
-            // Previous match: Ctrl+G with capital G
-            KeyEvent {
-                code: KeyCode::Char('G'),
-                modifiers,
-                ..
-            } if modifiers.contains(KeyModifiers::CONTROL) => {
                 if !self.search.matches.is_empty() {
                     self.search.prev_match();
                     self.jump_to_current_match();
@@ -745,7 +710,7 @@ fn render_search_bar(f: &mut Frame, app: &App, area: Rect) {
     };
 
     let title = format!(
-        "Search{} (Enter: jump, Esc: cancel, Ctrl+G/Ctrl+Shift+G: next/prev)",
+        "Search{} (Enter: jump, Esc: cancel, Ctrl+F/Ctrl+G: next/prev)",
         match_info
     );
 
