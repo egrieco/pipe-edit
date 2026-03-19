@@ -176,6 +176,22 @@ impl<'a> App<'a> {
             } => {
                 self.join_lines();
             }
+            // Ctrl-Delete or Shift-Delete: delete word to the right
+            KeyEvent {
+                code: KeyCode::Delete,
+                modifiers,
+                ..
+            } if modifiers.contains(KeyModifiers::CONTROL) || modifiers.contains(KeyModifiers::SHIFT) => {
+                self.textarea.delete_next_word();
+            }
+            // Ctrl-Backspace or Shift-Backspace: delete word to the left
+            KeyEvent {
+                code: KeyCode::Backspace,
+                modifiers,
+                ..
+            } if modifiers.contains(KeyModifiers::CONTROL) || modifiers.contains(KeyModifiers::SHIFT) => {
+                self.textarea.delete_word();
+            }
             _ => {
                 self.textarea.input(key);
             }
