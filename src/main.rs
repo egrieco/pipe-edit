@@ -16,9 +16,30 @@ use ratatui::{
 };
 use tui_textarea::TextArea;
 
+// Include build-time information
+mod built_info {
+    include!(concat!(env!("OUT_DIR"), "/built.rs"));
+}
+
+fn get_version_string() -> String {
+    let version = built_info::PKG_VERSION;
+    
+    let git_info = match (built_info::GIT_COMMIT_HASH_SHORT, built_info::GIT_DIRTY) {
+        (Some(commit), Some(dirty)) => {
+            let dirty_str = if dirty { "-dirty" } else { "" };
+            format!(" (git: {}{})", commit, dirty_str)
+        }
+        (Some(commit), None) => format!(" (git: {})", commit),
+        _ => String::new(),
+    };
+    
+    format!("{}{}", version, git_info)
+}
+
 #[derive(Parser, Debug)]
 #[command(name = "pipe-edit")]
 #[command(about = "A TUI editor for manually modifying data piped from stdin or the clipboard.")]
+#[command(version = None)] // Disable default version, we'll handle it ourselves
 struct Args {
     /// Output to clipboard instead of stdout
     #[arg(short, long)]
@@ -27,6 +48,10 @@ struct Args {
     /// Join all lines into a single line, squeezing whitespace
     #[arg(short, long)]
     single_line: bool,
+
+    /// Print version information
+    #[arg(short = 'V', long = "version")]
+    version: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -295,6 +320,12 @@ fn process_single_line_input(input: &str) -> String {
 fn main() -> io::Result<()> {
     let args = Args::parse();
 
+    // Handle --version flag
+    if args.version {
+        println!("pipe-edit {}", get_version_string());
+        return Ok(());
+    }
+
     // Read input from STDIN if it's not a terminal (i.e., piped input)
     // Otherwise, read from clipboard
     let initial_content = if !io::stdin().is_terminal() {
@@ -383,7 +414,7 @@ fn ui(f: &mut Frame, app: &App) {
 fn render_dialog(f: &mut Frame, app: &App) {
     let area = f.area();
 
-    // Calculate dialog size and position
+    //Calculate dialog size and position
     let dialog_width = 50.min(area.width.saturating_sub(4));
     let dialog_height = 7;
     let dialog_x = (area.width.saturating_sub(dialog_width)) / 2;
