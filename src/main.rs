@@ -99,38 +99,24 @@ impl<'a> App<'a> {
         // Calculate the new cursor position (at the join point)
         let new_cursor_col = current_trimmed.len();
 
-        // Move to the end of the current line
-        self.textarea.move_cursor(tui_textarea::CursorMove::End);
-        
-        // Delete from cursor to end of line (in case there's trailing whitespace)
-        // Then delete the newline and the next line's content
-        // We'll rebuild the content by selecting and replacing
-
-        // Move to start of current line
+        // Select from start of current line to end of next line, then replace with joined content
+        // First, move to start of current line
         self.textarea.move_cursor(tui_textarea::CursorMove::Head);
         
-        // Select the entire current line
-        self.textarea.move_cursor(tui_textarea::CursorMove::End);
+        // Start selection
         self.textarea.start_selection();
-        self.textarea.move_cursor(tui_textarea::CursorMove::Head);
         
-        // Delete current line content
+        // Move to next line
+        self.textarea.move_cursor(tui_textarea::CursorMove::Down);
+        
+        // Move to end of that line
+        self.textarea.move_cursor(tui_textarea::CursorMove::End);
+        
+        // Cut the selection (both lines)
         self.textarea.cut();
         
-        // Insert the joined content (without the next line yet)
+        // Insert the joined content
         self.textarea.insert_str(&joined);
-        
-        // Now delete the next line (which is now at current_row + 1)
-        // Move to the end of current line
-        self.textarea.move_cursor(tui_textarea::CursorMove::End);
-        
-        // Delete the newline and the entire next line
-        self.textarea.delete_newline();
-        
-        // Delete remaining content of what was the next line
-        self.textarea.start_selection();
-        self.textarea.move_cursor(tui_textarea::CursorMove::End);
-        self.textarea.cut();
 
         // Position cursor at the join point
         self.textarea.move_cursor(tui_textarea::CursorMove::Head);
