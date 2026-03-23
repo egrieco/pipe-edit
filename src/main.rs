@@ -52,6 +52,11 @@ struct Args {
     /// Print version information
     #[arg(short = 'V', long = "version")]
     version: bool,
+
+    /// Ignore stdin/clipboard and start with empty editor for user input.
+    /// Optionally provide a custom header to replace "Editor".
+    #[arg(short, long, value_name = "HEADER")]
+    question: Option<Option<String>>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -156,10 +161,11 @@ struct App<'a> {
 }
 
 impl<'a> App<'a> {
-    fn new(initial_content: String, single_line_mode: bool) -> Self {
+    fn new(initial_content: String, single_line_mode: bool, header: Option<String>) -> Self {
         let lines: Vec<String> = initial_content.lines().map(String::from).collect();
         let mut textarea = TextArea::new(lines);
-        textarea.set_block(Block::default().borders(Borders::ALL).title("Editor"));
+        let title = header.unwrap_or_else(|| "Editor".to_string());
+        textarea.set_block(Block::default().borders(Borders::ALL).title(title));
 
         Self {
             textarea,
@@ -595,12 +601,16 @@ fn main() -> io::Result<()> {
 
     // Read input from STDIN if it's not a terminal (i.e., piped input)
     // Otherwise, read from clipboard
-    let initial_content = if !io::stdin().is_terminal() {
+    let (initial_content, header) = if args.question.is_some() {
+        // --question flag: ignore stdin/clipboard, start empty
+        let header = args.question.clone().unwrap().unwrap_or_else(|| "Editor".to_string());
+        (String::new(), Some(header))
+    } else if !io::stdin().is_terminal() {
         let mut buffer = String::new();
         io::stdin().read_to_string(&mut buffer)?;
-        buffer
+        (buffer, None)
     } else {
-        get_clipboard_content()
+        (get_clipboard_content(), None)
     };
 
     // Process input for single-line mode if enabled
@@ -618,7 +628,7 @@ fn main() -> io::Result<()> {
     let mut terminal = Terminal::new(backend)?;
 
     // Create app
-    let mut app = App::new(initial_content, args.single_line);
+    let mut app = App::new(initial_content, args.single_line, header);
 
     // Main loop
     loop {
