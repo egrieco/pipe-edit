@@ -159,11 +159,7 @@ impl<'a> App<'a> {
     fn new(initial_content: String, single_line_mode: bool) -> Self {
         let lines: Vec<String> = initial_content.lines().map(String::from).collect();
         let mut textarea = TextArea::new(lines);
-        textarea.set_block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title("Editor (Alt+Enter: Exit and Pipe Output, Esc: Menu, Ctrl+F: Search)"),
-        );
+        textarea.set_block(Block::default().borders(Borders::ALL).title("Editor"));
 
         Self {
             textarea,
@@ -673,12 +669,21 @@ fn main() -> io::Result<()> {
 fn ui(f: &mut Frame, app: &App) {
     let size = f.area();
 
+    // Main layout: editor area and status bar at bottom
+    let main_chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Min(1), Constraint::Length(1)])
+        .split(size);
+
+    let editor_area = main_chunks[0];
+    let status_area = main_chunks[1];
+
     if app.search.active {
-        // When search is active, split the screen to show search bar at bottom
+        // When search is active, split the editor area to show search bar
         let chunks = Layout::default()
             .direction(Direction::Vertical)
             .constraints([Constraint::Min(1), Constraint::Length(3)])
-            .split(size);
+            .split(editor_area);
 
         // Render the textarea in the main area
         f.render_widget(&app.textarea, chunks[0]);
@@ -686,14 +691,24 @@ fn ui(f: &mut Frame, app: &App) {
         // Render the search bar
         render_search_bar(f, app, chunks[1]);
     } else {
-        // Render the textarea full screen
-        f.render_widget(&app.textarea, size);
+        // Render the textarea in the editor area
+        f.render_widget(&app.textarea, editor_area);
     }
+
+    // Render status bar with instructions
+    render_status_bar(f, status_area);
 
     // Render dialog if shown
     if app.show_dialog {
         render_dialog(f, app);
     }
+}
+
+fn render_status_bar(f: &mut Frame, area: Rect) {
+    let instructions = "Alt+Enter: Exit and Pipe Output | Esc: Menu | Ctrl+F: Search";
+    let status = Paragraph::new(instructions)
+        .style(Style::default().fg(Color::White).bg(Color::DarkGray));
+    f.render_widget(status, area);
 }
 
 fn render_search_bar(f: &mut Frame, app: &App, area: Rect) {
