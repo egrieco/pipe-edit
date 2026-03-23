@@ -367,6 +367,7 @@ impl<'a> App<'a> {
     }
 
     fn handle_editor_key_event(&mut self, key: KeyEvent) {
+        // TODO switch key code handling to the `keybinds` crate
         match key {
             // Search: Ctrl+F
             KeyEvent {
