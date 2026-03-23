@@ -54,7 +54,7 @@ struct Args {
     version: bool,
 
     /// Ignore stdin/clipboard and start with empty editor for user input.
-    /// Optionally provide a custom header to replace "Editor".
+    /// Optionally provide a custom header to display.
     #[arg(short, long, value_name = "HEADER")]
     question: Option<Option<String>>,
 }
@@ -191,7 +191,12 @@ impl<'a> App<'a> {
     }
 
     fn update_search_matches(&mut self) {
-        let lines: Vec<String> = self.textarea.lines().iter().map(|s| s.to_string()).collect();
+        let lines: Vec<String> = self
+            .textarea
+            .lines()
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
         self.search.find_matches(&lines);
         self.update_search_highlighting();
     }
@@ -230,8 +235,7 @@ impl<'a> App<'a> {
 
             // Move to the correct column
             for _ in 0..col {
-                self.textarea
-                    .move_cursor(tui_textarea::CursorMove::Forward);
+                self.textarea.move_cursor(tui_textarea::CursorMove::Forward);
             }
         }
     }
@@ -603,7 +607,11 @@ fn main() -> io::Result<()> {
     // Otherwise, read from clipboard
     let (initial_content, header) = if args.question.is_some() {
         // --question flag: ignore stdin/clipboard, start empty
-        let header = args.question.clone().unwrap().unwrap_or_else(|| "Editor".to_string());
+        let header = args
+            .question
+            .clone()
+            .unwrap()
+            .unwrap_or_else(|| "Editor".to_string());
         (String::new(), Some(header))
     } else if !io::stdin().is_terminal() {
         let mut buffer = String::new();
@@ -716,8 +724,8 @@ fn ui(f: &mut Frame, app: &App) {
 
 fn render_status_bar(f: &mut Frame, area: Rect) {
     let instructions = "Alt+Enter: Exit and Pipe Output | Esc: Menu | Ctrl+F: Search";
-    let status = Paragraph::new(instructions)
-        .style(Style::default().fg(Color::White).bg(Color::DarkGray));
+    let status =
+        Paragraph::new(instructions).style(Style::default().fg(Color::White).bg(Color::DarkGray));
     f.render_widget(status, area);
 }
 
