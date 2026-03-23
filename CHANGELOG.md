@@ -5,6 +5,53 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v0.1.2 (2026-03-23)
+
+### New Features
+
+ - <csr-id-ceb04b8d05965750ab0f1fdc873b97015a0aa1c1/> add `--question` flag with optional custom header support
+ - <csr-id-a32e408e99201eb0e920df381cc75996093ffae8/> move editor instructions from title to bottom status bar
+ - <csr-id-3dfe07c905316097d1dc84096182406a0f9034ad/> add Ctrl+f for next match and Ctrl+g for previous match in search mode
+ - <csr-id-e957522cae5a7e7e185753eff6ebd875347a58aa/> add search functionality with Ctrl+F and match navigation
+ - <csr-id-5ad42b641b61d54cd8fd37a2645d6314ee6b07e9/> add search functionality with Ctrl-F, Ctrl-G, and match highlighting
+ - <csr-id-f83f5aba04272574164a1e4bbd390ea60738cd56/> add keybindings for exit with/without output
+ - <csr-id-657d7141abe195f883a2acce20b998cde1cbcf6b/> add version flag with git commit information
+
+### Bug Fixes
+
+ - <csr-id-ed91bb1a1f70a1abd3af45b7f0dc76103d3f14d1/> enable search feature and fix KeyModifiers typo in tui-textarea
+ - <csr-id-3d15f9b6c55d3ffc203142874f679fc540c9e1e4/> Undo some unnecessary changes and format
+
+### Commit Statistics
+
+<csr-read-only-do-not-edit/>
+
+ - 12 commits contributed to the release over the course of 4 calendar days.
+ - 4 days passed between releases.
+ - 9 commits were understood as [conventional](https://www.conventionalcommits.org).
+ - 0 issues like '(#ID)' were seen in commit messages
+
+### Commit Details
+
+<csr-read-only-do-not-edit/>
+
+<details><summary>view details</summary>
+
+ * **Uncategorized**
+    - Add TOOD about keybindings ([`ff3131f`](https://github.com/egrieco/pipe-edit/commit/ff3131fc2e4c2720bafa2ac2312dda41208c271e))
+    - Minor cleanup and formatting ([`f579d28`](https://github.com/egrieco/pipe-edit/commit/f579d286c5b8fd3ed267bbee0f72cad34d7bf52a))
+    - Add `--question` flag with optional custom header support ([`ceb04b8`](https://github.com/egrieco/pipe-edit/commit/ceb04b8d05965750ab0f1fdc873b97015a0aa1c1))
+    - Move editor instructions from title to bottom status bar ([`a32e408`](https://github.com/egrieco/pipe-edit/commit/a32e408e99201eb0e920df381cc75996093ffae8))
+    - Add Ctrl+f for next match and Ctrl+g for previous match in search mode ([`3dfe07c`](https://github.com/egrieco/pipe-edit/commit/3dfe07c905316097d1dc84096182406a0f9034ad))
+    - Update Cargo.lock ([`212d859`](https://github.com/egrieco/pipe-edit/commit/212d859a42e291dc195ee3b3f51d8916bda0406a))
+    - Enable search feature and fix KeyModifiers typo in tui-textarea ([`ed91bb1`](https://github.com/egrieco/pipe-edit/commit/ed91bb1a1f70a1abd3af45b7f0dc76103d3f14d1))
+    - Add search functionality with Ctrl+F and match navigation ([`e957522`](https://github.com/egrieco/pipe-edit/commit/e957522cae5a7e7e185753eff6ebd875347a58aa))
+    - Add search functionality with Ctrl-F, Ctrl-G, and match highlighting ([`5ad42b6`](https://github.com/egrieco/pipe-edit/commit/5ad42b641b61d54cd8fd37a2645d6314ee6b07e9))
+    - Add keybindings for exit with/without output ([`f83f5ab`](https://github.com/egrieco/pipe-edit/commit/f83f5aba04272574164a1e4bbd390ea60738cd56))
+    - Undo some unnecessary changes and format ([`3d15f9b`](https://github.com/egrieco/pipe-edit/commit/3d15f9b6c55d3ffc203142874f679fc540c9e1e4))
+    - Add version flag with git commit information ([`657d714`](https://github.com/egrieco/pipe-edit/commit/657d7141abe195f883a2acce20b998cde1cbcf6b))
+</details>
+
 ## v0.1.1 (2026-03-19)
 
 ### New Features
@@ -26,7 +73,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <csr-read-only-do-not-edit/>
 
- - 9 commits contributed to the release.
+ - 10 commits contributed to the release.
  - 26 days passed between releases.
  - 8 commits were understood as [conventional](https://www.conventionalcommits.org).
  - 0 issues like '(#ID)' were seen in commit messages
@@ -38,6 +85,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <details><summary>view details</summary>
 
  * **Uncategorized**
+    - Release pipe-edit v0.1.1 ([`bbc2aa1`](https://github.com/egrieco/pipe-edit/commit/bbc2aa1ccaabf61630212bc9be7f36f8b316ffec))
     - Add rust crates doc ([`8d8db1a`](https://github.com/egrieco/pipe-edit/commit/8d8db1a03ce9b3e12af9c06c7de80ee7dd903aea))
     - Add text that Aider missed ([`031de29`](https://github.com/egrieco/pipe-edit/commit/031de295bac6020f7385404fb7a76fb79b76b05b))
     - Add --version flag with git commit and dirty status ([`484f728`](https://github.com/egrieco/pipe-edit/commit/484f728c1cf565aed74d1bf3912e13d81a80b916))
