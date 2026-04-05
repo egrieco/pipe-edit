@@ -522,18 +522,43 @@ impl<'a> App<'a> {
             } => {
                 self.join_lines();
             }
-            // Ctrl+Alt+Shift+Backspace: delete from cursor to beginning of buffer
+            // Delete to beginning of buffer: Ctrl+Shift+U
             KeyEvent {
-                code: KeyCode::Backspace,
+                code: KeyCode::Char('u'),
                 modifiers,
                 ..
             } if modifiers.contains(KeyModifiers::CONTROL)
-                && modifiers.contains(KeyModifiers::ALT)
                 && modifiers.contains(KeyModifiers::SHIFT) =>
             {
                 self.delete_to_start_of_buffer();
             }
-            // Ctrl+Alt+Shift+Delete: delete from cursor to end of buffer
+            // Delete to beginning of buffer: Alt+<
+            KeyEvent {
+                code: KeyCode::Char('<'),
+                modifiers: KeyModifiers::ALT,
+                ..
+            } => {
+                self.delete_to_start_of_buffer();
+            }
+            // Delete to end of buffer: Ctrl+Shift+K
+            KeyEvent {
+                code: KeyCode::Char('k'),
+                modifiers,
+                ..
+            } if modifiers.contains(KeyModifiers::CONTROL)
+                && modifiers.contains(KeyModifiers::SHIFT) =>
+            {
+                self.delete_to_end_of_buffer();
+            }
+            // Delete to end of buffer: Alt+>
+            KeyEvent {
+                code: KeyCode::Char('>'),
+                modifiers: KeyModifiers::ALT,
+                ..
+            } => {
+                self.delete_to_end_of_buffer();
+            }
+            // Ctrl+Alt+Shift+Delete: delete from cursor to end of buffer (legacy)
             KeyEvent {
                 code: KeyCode::Delete,
                 modifiers,
@@ -930,8 +955,8 @@ fn render_help(f: &mut Frame) {
         "    Ctrl+J          Join current line with next",
         "    Ctrl+Backspace  Delete word left",
         "    Ctrl+Delete     Delete word right",
-        "    Ctrl+Alt+Shift+Backspace  Delete to start of buffer",
-        "    Ctrl+Alt+Shift+Delete     Delete to end of buffer",
+        "    Ctrl+Shift+U, Alt+<       Delete to start of buffer",
+        "    Ctrl+Shift+K, Alt+>       Delete to end of buffer",
         "",
         "  Search:",
         "    Ctrl+F          Open search / Next match",
