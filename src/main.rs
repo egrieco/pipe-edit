@@ -522,23 +522,25 @@ impl<'a> App<'a> {
             } => {
                 self.join_lines();
             }
-            // Ctrl+Alt+Backspace: delete from cursor to beginning of buffer
+            // Ctrl+Alt+Shift+Backspace: delete from cursor to beginning of buffer
             KeyEvent {
                 code: KeyCode::Backspace,
                 modifiers,
                 ..
             } if modifiers.contains(KeyModifiers::CONTROL)
-                && modifiers.contains(KeyModifiers::ALT) =>
+                && modifiers.contains(KeyModifiers::ALT)
+                && modifiers.contains(KeyModifiers::SHIFT) =>
             {
                 self.delete_to_start_of_buffer();
             }
-            // Ctrl+Alt+Delete: delete from cursor to end of buffer
+            // Ctrl+Alt+Shift+Delete: delete from cursor to end of buffer
             KeyEvent {
                 code: KeyCode::Delete,
                 modifiers,
                 ..
             } if modifiers.contains(KeyModifiers::CONTROL)
-                && modifiers.contains(KeyModifiers::ALT) =>
+                && modifiers.contains(KeyModifiers::ALT)
+                && modifiers.contains(KeyModifiers::SHIFT) =>
             {
                 self.delete_to_end_of_buffer();
             }
@@ -928,8 +930,8 @@ fn render_help(f: &mut Frame) {
         "    Ctrl+J          Join current line with next",
         "    Ctrl+Backspace  Delete word left",
         "    Ctrl+Delete     Delete word right",
-        "    Ctrl+Alt+Backspace  Delete to start of buffer",
-        "    Ctrl+Alt+Delete     Delete to end of buffer",
+        "    Ctrl+Alt+Shift+Backspace  Delete to start of buffer",
+        "    Ctrl+Alt+Shift+Delete     Delete to end of buffer",
         "",
         "  Search:",
         "    Ctrl+F          Open search / Next match",
