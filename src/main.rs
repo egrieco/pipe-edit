@@ -308,6 +308,22 @@ impl<'a> App<'a> {
         }
     }
 
+    fn delete_to_start_of_buffer(&mut self) {
+        // Select from current position to beginning of buffer, then delete
+        self.textarea.start_selection();
+        self.textarea.move_cursor(tui_textarea::CursorMove::Top);
+        self.textarea.move_cursor(tui_textarea::CursorMove::Head);
+        self.textarea.cut();
+    }
+
+    fn delete_to_end_of_buffer(&mut self) {
+        // Select from current position to end of buffer, then delete
+        self.textarea.start_selection();
+        self.textarea.move_cursor(tui_textarea::CursorMove::Bottom);
+        self.textarea.move_cursor(tui_textarea::CursorMove::End);
+        self.textarea.cut();
+    }
+
     fn handle_help_key_event(&mut self, key: KeyEvent) {
         // Any key closes the help screen
         match key.code {
@@ -505,6 +521,26 @@ impl<'a> App<'a> {
                 ..
             } => {
                 self.join_lines();
+            }
+            // Ctrl+Alt+Backspace: delete from cursor to beginning of buffer
+            KeyEvent {
+                code: KeyCode::Backspace,
+                modifiers,
+                ..
+            } if modifiers.contains(KeyModifiers::CONTROL)
+                && modifiers.contains(KeyModifiers::ALT) =>
+            {
+                self.delete_to_start_of_buffer();
+            }
+            // Ctrl+Alt+Delete: delete from cursor to end of buffer
+            KeyEvent {
+                code: KeyCode::Delete,
+                modifiers,
+                ..
+            } if modifiers.contains(KeyModifiers::CONTROL)
+                && modifiers.contains(KeyModifiers::ALT) =>
+            {
+                self.delete_to_end_of_buffer();
             }
             // Ctrl-Delete or Shift-Delete: delete word to the right
             KeyEvent {
@@ -892,6 +928,8 @@ fn render_help(f: &mut Frame) {
         "    Ctrl+J          Join current line with next",
         "    Ctrl+Backspace  Delete word left",
         "    Ctrl+Delete     Delete word right",
+        "    Ctrl+Alt+Backspace  Delete to start of buffer",
+        "    Ctrl+Alt+Delete     Delete to end of buffer",
         "",
         "  Search:",
         "    Ctrl+F          Open search / Next match",
