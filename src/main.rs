@@ -153,6 +153,7 @@ impl SearchState {
 struct App<'a> {
     textarea: TextArea<'a>,
     show_dialog: bool,
+    show_help: bool,
     selected_option: DialogOption,
     should_exit: bool,
     exit_with_output: bool,
@@ -170,6 +171,7 @@ impl<'a> App<'a> {
         Self {
             textarea,
             show_dialog: false,
+            show_help: false,
             selected_option: DialogOption::Cancel,
             should_exit: false,
             exit_with_output: false,
@@ -243,6 +245,8 @@ impl<'a> App<'a> {
     fn handle_key_event(&mut self, key: KeyEvent) {
         if self.show_dialog {
             self.handle_dialog_key_event(key);
+        } else if self.show_help {
+            self.handle_help_key_event(key);
         } else if self.search.active {
             self.handle_search_key_event(key);
         } else {
@@ -301,6 +305,22 @@ impl<'a> App<'a> {
         self.textarea.move_cursor(tui_textarea::CursorMove::Head);
         for _ in 0..new_cursor_col {
             self.textarea.move_cursor(tui_textarea::CursorMove::Forward);
+        }
+    }
+
+    fn handle_help_key_event(&mut self, key: KeyEvent) {
+        // Any key closes the help screen
+        match key.code {
+            KeyCode::Esc
+            | KeyCode::Enter
+            | KeyCode::Char('q')
+            | KeyCode::Char('h')
+            | KeyCode::Char(' ') => {
+                self.show_help = false;
+            }
+            _ => {
+                self.show_help = false;
+            }
         }
     }
 
@@ -390,6 +410,14 @@ impl<'a> App<'a> {
                     self.search.prev_match();
                     self.jump_to_current_match();
                 }
+            }
+            // Help: Ctrl+H
+            KeyEvent {
+                code: KeyCode::Char('h'),
+                modifiers: KeyModifiers::CONTROL,
+                ..
+            } => {
+                self.show_help = true;
             }
             // Exit with output: Alt+Enter
             KeyEvent {
@@ -497,14 +525,6 @@ impl<'a> App<'a> {
             } if modifiers.contains(KeyModifiers::CONTROL)
                 || modifiers.contains(KeyModifiers::SHIFT) =>
             {
-                self.textarea.delete_word();
-            }
-            // Some terminals send Ctrl-Backspace as Ctrl-H
-            KeyEvent {
-                code: KeyCode::Char('h'),
-                modifiers: KeyModifiers::CONTROL,
-                ..
-            } => {
                 self.textarea.delete_word();
             }
             // Some terminals send Ctrl-Backspace as Char('\x7f') with CONTROL
@@ -721,10 +741,15 @@ fn ui(f: &mut Frame, app: &App) {
     if app.show_dialog {
         render_dialog(f, app);
     }
+
+    // Render help if shown
+    if app.show_help {
+        render_help(f);
+    }
 }
 
 fn render_status_bar(f: &mut Frame, area: Rect) {
-    let instructions = "Alt+Enter: Exit and Pipe Output | Esc: Menu | Ctrl+F: Search";
+    let instructions = "Alt+Enter: Exit and Pipe Output | Esc: Menu | Ctrl+F: Search | Ctrl+H: Help";
     let status =
         Paragraph::new(instructions).style(Style::default().fg(Color::White).bg(Color::DarkGray));
     f.render_widget(status, area);
@@ -835,4 +860,58 @@ fn render_dialog(f: &mut Frame, app: &App) {
     f.render_widget(cancel_btn, button_layout[0]);
     f.render_widget(abort_btn, button_layout[1]);
     f.render_widget(pipe_out_btn, button_layout[2]);
+}
+
+fn render_help(f: &mut Frame) {
+    let area = f.area();
+
+    // Calculate help screen size and position
+    let help_width = 60.min(area.width.saturating_sub(4));
+    let help_height = 22.min(area.height.saturating_sub(4));
+    let help_x = (area.width.saturating_sub(help_width)) / 2;
+    let help_y = (area.height.saturating_sub(help_height)) / 2;
+
+    let help_area = Rect::new(help_x, help_y, help_width, help_height);
+
+    // Clear the area behind the help screen
+    f.render_widget(Clear, help_area);
+
+    // Create help content
+    let help_text = vec![
+        "",
+        "  KEYBOARD SHORTCUTS",
+        "  ──────────────────────────────────────────",
+        "",
+        "  Exit & Output:",
+        "    Alt+Enter, Ctrl+Enter, Shift+Enter, Ctrl+D",
+        "",
+        "  Exit without Output:",
+        "    Ctrl+C, Ctrl+Q, Ctrl+W",
+        "",
+        "  Navigation & Editing:",
+        "    Ctrl+J          Join current line with next",
+        "    Ctrl+Backspace  Delete word left",
+        "    Ctrl+Delete     Delete word right",
+        "",
+        "  Search:",
+        "    Ctrl+F          Open search / Next match",
+        "    Ctrl+G          Previous match",
+        "",
+        "  Other:",
+        "    Esc             Open exit menu",
+        "    Ctrl+H          Show this help",
+        "",
+        "  Press any key to close this help screen",
+    ];
+
+    let help_paragraph = Paragraph::new(help_text.join("\n"))
+        .block(
+            Block::default()
+                .title(" Help ")
+                .borders(Borders::ALL)
+                .style(Style::default().bg(Color::DarkGray)),
+        )
+        .style(Style::default().fg(Color::White).bg(Color::DarkGray));
+
+    f.render_widget(help_paragraph, help_area);
 }
