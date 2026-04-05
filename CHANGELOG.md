@@ -5,6 +5,49 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v0.1.3 (2026-04-04)
+
+### New Features
+
+ - <csr-id-91a111cbcb6d17471f2427246b07f2f69d97fa29/> add Alt+Up/Down keybindings to move lines up and down
+ - <csr-id-de9fa1864e2182bbf5689fdfea246025212c67ca/> add scrollable help dialog with dynamic sizing
+ - <csr-id-292257d5ec0c17ae4739dd8d99668294e1f5bf78/> add Ctrl+Alt+Backspace and Ctrl+Alt+Delete keybindings for buffer deletion
+ - <csr-id-9151a1f90571925bce1a3e20058480ab93ba2647/> add help screen displayed with Ctrl+H showing keyboard shortcuts
+
+### Bug Fixes
+
+ - <csr-id-4ba5a1270f0708e1a0ed6cefcad3da75473836c4/> Correct minor typo
+ - <csr-id-7ade69c0b2d01e6b411f5b2af0e6c42dff50f88a/> change delete buffer bindings from Ctrl+Shift to Ctrl+Alt
+ - <csr-id-d7b5c2a9c2aec6e82de01139d2be2e7d77db9407/> update delete buffer keybindings and remove non-working Ctrl+Alt+Shift+Backspace
+ - <csr-id-95817a6f98bbd29974846bfb6d83a4ef55673546/> change buffer deletion keybindings to avoid Niri conflict
+
+### Commit Statistics
+
+<csr-read-only-do-not-edit/>
+
+ - 9 commits contributed to the release.
+ - 12 days passed between releases.
+ - 8 commits were understood as [conventional](https://www.conventionalcommits.org).
+ - 0 issues like '(#ID)' were seen in commit messages
+
+### Commit Details
+
+<csr-read-only-do-not-edit/>
+
+<details><summary>view details</summary>
+
+ * **Uncategorized**
+    - Correct minor typo ([`4ba5a12`](https://github.com/egrieco/pipe-edit/commit/4ba5a1270f0708e1a0ed6cefcad3da75473836c4))
+    - Add Alt+Up/Down keybindings to move lines up and down ([`91a111c`](https://github.com/egrieco/pipe-edit/commit/91a111cbcb6d17471f2427246b07f2f69d97fa29))
+    - Add terminal keybinding info ([`24e2651`](https://github.com/egrieco/pipe-edit/commit/24e265145e96ad276c43493089bd5701a33fd58f))
+    - Add scrollable help dialog with dynamic sizing ([`de9fa18`](https://github.com/egrieco/pipe-edit/commit/de9fa1864e2182bbf5689fdfea246025212c67ca))
+    - Change delete buffer bindings from Ctrl+Shift to Ctrl+Alt ([`7ade69c`](https://github.com/egrieco/pipe-edit/commit/7ade69c0b2d01e6b411f5b2af0e6c42dff50f88a))
+    - Update delete buffer keybindings and remove non-working Ctrl+Alt+Shift+Backspace ([`d7b5c2a`](https://github.com/egrieco/pipe-edit/commit/d7b5c2a9c2aec6e82de01139d2be2e7d77db9407))
+    - Change buffer deletion keybindings to avoid Niri conflict ([`95817a6`](https://github.com/egrieco/pipe-edit/commit/95817a6f98bbd29974846bfb6d83a4ef55673546))
+    - Add Ctrl+Alt+Backspace and Ctrl+Alt+Delete keybindings for buffer deletion ([`292257d`](https://github.com/egrieco/pipe-edit/commit/292257d5ec0c17ae4739dd8d99668294e1f5bf78))
+    - Add help screen displayed with Ctrl+H showing keyboard shortcuts ([`9151a1f`](https://github.com/egrieco/pipe-edit/commit/9151a1f90571925bce1a3e20058480ab93ba2647))
+</details>
+
 ## v0.1.2 (2026-03-23)
 
 ### New Features
@@ -26,7 +69,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <csr-read-only-do-not-edit/>
 
- - 12 commits contributed to the release over the course of 4 calendar days.
+ - 13 commits contributed to the release over the course of 4 calendar days.
  - 4 days passed between releases.
  - 9 commits were understood as [conventional](https://www.conventionalcommits.org).
  - 0 issues like '(#ID)' were seen in commit messages
@@ -38,6 +81,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <details><summary>view details</summary>
 
  * **Uncategorized**
+    - Release pipe-edit v0.1.2 ([`085a987`](https://github.com/egrieco/pipe-edit/commit/085a98730697222a1d1bcb45a031b9ddb490fced))
     - Add TOOD about keybindings ([`ff3131f`](https://github.com/egrieco/pipe-edit/commit/ff3131fc2e4c2720bafa2ac2312dda41208c271e))
     - Minor cleanup and formatting ([`f579d28`](https://github.com/egrieco/pipe-edit/commit/f579d286c5b8fd3ed267bbee0f72cad34d7bf52a))
     - Add `--question` flag with optional custom header support ([`ceb04b8`](https://github.com/egrieco/pipe-edit/commit/ceb04b8d05965750ab0f1fdc873b97015a0aa1c1))
