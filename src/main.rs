@@ -150,10 +150,41 @@ impl SearchState {
     }
 }
 
+fn get_help_lines() -> Vec<&'static str> {
+    vec![
+        "",
+        "  KEYBOARD SHORTCUTS",
+        "  ──────────────────────────────────────────",
+        "",
+        "  Exit & Output:",
+        "    Alt+Enter, Ctrl+Enter, Shift+Enter, Ctrl+D",
+        "",
+        "  Exit without Output:",
+        "    Ctrl+C, Ctrl+Q, Ctrl+W",
+        "",
+        "  Navigation & Editing:",
+        "    Ctrl+J          Join current line with next",
+        "    Ctrl+Backspace  Delete word left",
+        "    Ctrl+Delete     Delete word right",
+        "    Ctrl+Alt+U, Alt+<        Delete to start of buffer",
+        "    Ctrl+Alt+K, Alt+>        Delete to end of buffer",
+        "",
+        "  Search:",
+        "    Ctrl+F          Open search / Next match",
+        "    Ctrl+G          Previous match",
+        "",
+        "  Other:",
+        "    Esc             Open exit menu",
+        "    Ctrl+H          Show this help",
+        "",
+    ]
+}
+
 struct App<'a> {
     textarea: TextArea<'a>,
     show_dialog: bool,
     show_help: bool,
+    help_scroll: usize,
     selected_option: DialogOption,
     should_exit: bool,
     exit_with_output: bool,
@@ -172,6 +203,7 @@ impl<'a> App<'a> {
             textarea,
             show_dialog: false,
             show_help: false,
+            help_scroll: 0,
             selected_option: DialogOption::Cancel,
             should_exit: false,
             exit_with_output: false,
@@ -325,18 +357,41 @@ impl<'a> App<'a> {
     }
 
     fn handle_help_key_event(&mut self, key: KeyEvent) {
-        // Any key closes the help screen
+        let help_lines = get_help_lines();
+        let total_lines = help_lines.len();
+
         match key.code {
-            KeyCode::Esc
-            | KeyCode::Enter
-            | KeyCode::Char('q')
-            | KeyCode::Char('h')
-            | KeyCode::Char(' ') => {
+            KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char('h') => {
                 self.show_help = false;
+                self.help_scroll = 0;
             }
-            _ => {
+            KeyCode::Up | KeyCode::Char('k') => {
+                if self.help_scroll > 0 {
+                    self.help_scroll -= 1;
+                }
+            }
+            KeyCode::Down | KeyCode::Char('j') => {
+                // We'll clamp this in render_help based on visible height
+                self.help_scroll = self.help_scroll.saturating_add(1);
+            }
+            KeyCode::PageUp => {
+                self.help_scroll = self.help_scroll.saturating_sub(10);
+            }
+            KeyCode::PageDown => {
+                self.help_scroll = self.help_scroll.saturating_add(10);
+            }
+            KeyCode::Home => {
+                self.help_scroll = 0;
+            }
+            KeyCode::End => {
+                // Set to a large value; render_help will clamp it
+                self.help_scroll = total_lines;
+            }
+            KeyCode::Enter | KeyCode::Char(' ') => {
                 self.show_help = false;
+                self.help_scroll = 0;
             }
+            _ => {}
         }
     }
 
@@ -434,6 +489,7 @@ impl<'a> App<'a> {
                 ..
             } => {
                 self.show_help = true;
+                self.help_scroll = 0;
             }
             // Exit with output: Alt+Enter
             KeyEvent {
@@ -724,7 +780,7 @@ fn main() -> io::Result<()> {
 
     // Main loop
     loop {
-        terminal.draw(|f| ui(f, &app))?;
+        terminal.draw(|f| ui(f, &mut app))?;
 
         if let Event::Key(key) = event::read()? {
             app.handle_key_event(key);
@@ -758,7 +814,7 @@ fn main() -> io::Result<()> {
                 let output = content.trim_end_matches(['\r', '\n']);
                 io::stdout().write_all(output.as_bytes())?;
             } else {
-                io::stdout().write_all(content.as_bytes())?;
+                io.stdout().write_all(content.as_bytes())?;
                 io::stdout().write_all(b"\n")?;
             }
         }
@@ -768,7 +824,7 @@ fn main() -> io::Result<()> {
     }
 }
 
-fn ui(f: &mut Frame, app: &App) {
+fn ui(f: &mut Frame, app: &mut App) {
     let size = f.area();
 
     // Main layout: editor area and status bar at bottom
@@ -807,7 +863,7 @@ fn ui(f: &mut Frame, app: &App) {
 
     // Render help if shown
     if app.show_help {
-        render_help(f);
+        render_help(f, app);
     }
 }
 
@@ -925,12 +981,18 @@ fn render_dialog(f: &mut Frame, app: &App) {
     f.render_widget(pipe_out_btn, button_layout[2]);
 }
 
-fn render_help(f: &mut Frame) {
+fn render_help(f: &mut Frame, app: &mut App) {
     let area = f.area();
+    let help_lines = get_help_lines();
+    let total_content_lines = help_lines.len();
 
-    // Calculate help screen size and position
+    // Calculate help screen size - try to fit all content, but respect screen bounds
+    // Add 2 for borders, 1 for close instruction line, 1 for potential scroll indicator
+    let ideal_height = total_content_lines + 4;
+    let max_height = area.height.saturating_sub(4);
+    let help_height = (ideal_height as u16).min(max_height).max(10);
+
     let help_width = 60.min(area.width.saturating_sub(4));
-    let help_height = 22.min(area.height.saturating_sub(4));
     let help_x = (area.width.saturating_sub(help_width)) / 2;
     let help_y = (area.height.saturating_sub(help_height)) / 2;
 
@@ -939,40 +1001,74 @@ fn render_help(f: &mut Frame) {
     // Clear the area behind the help screen
     f.render_widget(Clear, help_area);
 
-    // Create help content
-    let help_text = vec![
-        "",
-        "  KEYBOARD SHORTCUTS",
-        "  ──────────────────────────────────────────",
-        "",
-        "  Exit & Output:",
-        "    Alt+Enter, Ctrl+Enter, Shift+Enter, Ctrl+D",
-        "",
-        "  Exit without Output:",
-        "    Ctrl+C, Ctrl+Q, Ctrl+W",
-        "",
-        "  Navigation & Editing:",
-        "    Ctrl+J          Join current line with next",
-        "    Ctrl+Backspace  Delete word left",
-        "    Ctrl+Delete     Delete word right",
-        "    Ctrl+Alt+U, Alt+<        Delete to start of buffer",
-        "    Ctrl+Alt+K, Alt+>        Delete to end of buffer",
-        "",
-        "  Search:",
-        "    Ctrl+F          Open search / Next match",
-        "    Ctrl+G          Previous match",
-        "",
-        "  Other:",
-        "    Esc             Open exit menu",
-        "    Ctrl+H          Show this help",
-        "",
-        "  Press any key to close this help screen",
-    ];
+    // Calculate visible content area (inside borders)
+    // Reserve 1 line for the footer (close/scroll instructions)
+    let visible_content_height = help_height.saturating_sub(4) as usize; // 2 for borders, 1 for title area, 1 for footer
 
-    let help_paragraph = Paragraph::new(help_text.join("\n"))
+    let needs_scroll = total_content_lines > visible_content_height;
+
+    // Clamp scroll position
+    let max_scroll = if needs_scroll {
+        total_content_lines.saturating_sub(visible_content_height)
+    } else {
+        0
+    };
+    if app.help_scroll > max_scroll {
+        app.help_scroll = max_scroll;
+    }
+
+    // Build the visible content
+    let visible_lines: Vec<&str> = help_lines
+        .iter()
+        .skip(app.help_scroll)
+        .take(visible_content_height)
+        .copied()
+        .collect();
+
+    // Build footer line
+    let footer = if needs_scroll {
+        let position = if max_scroll > 0 {
+            format!(
+                " [{}/{}] ",
+                app.help_scroll + 1,
+                max_scroll + 1
+            )
+        } else {
+            String::new()
+        };
+        format!(
+            "  ↑/↓/PgUp/PgDn: Scroll | q/Esc: Close{}",
+            position
+        )
+    } else {
+        "  Press q or Esc to close".to_string()
+    };
+
+    // Combine visible lines with footer
+    let mut display_text = visible_lines.join("\n");
+    display_text.push('\n');
+    display_text.push_str(&footer);
+
+    // Create title with scroll indicator if needed
+    let title = if needs_scroll {
+        let scroll_indicator = if app.help_scroll > 0 && app.help_scroll < max_scroll {
+            " ↑↓"
+        } else if app.help_scroll > 0 {
+            " ↑"
+        } else if app.help_scroll < max_scroll {
+            " ↓"
+        } else {
+            ""
+        };
+        format!(" Help{} ", scroll_indicator)
+    } else {
+        " Help ".to_string()
+    };
+
+    let help_paragraph = Paragraph::new(display_text)
         .block(
             Block::default()
-                .title(" Help ")
+                .title(title)
                 .borders(Borders::ALL)
                 .style(Style::default().bg(Color::DarkGray)),
         )
