@@ -164,6 +164,8 @@ fn get_help_lines() -> Vec<&'static str> {
         "",
         "  Navigation & Editing:",
         "    Ctrl+J          Join current line with next",
+        "    Alt+Up          Move line up",
+        "    Alt+Down        Move line down",
         "    Ctrl+Backspace  Delete word left",
         "    Ctrl+Delete     Delete word right",
         "    Ctrl+Alt+U, Alt+<        Delete to start of buffer",
@@ -356,6 +358,81 @@ impl<'a> App<'a> {
         self.textarea.cut();
     }
 
+    fn move_line_up(&mut self) {
+        let (current_row, current_col) = self.textarea.cursor();
+
+        // Can't move up if already at the first line
+        if current_row == 0 {
+            return;
+        }
+
+        let lines = self.textarea.lines();
+        let current_line = lines[current_row].to_string();
+        let prev_line = lines[current_row - 1].to_string();
+
+        // Move to start of previous line
+        self.textarea.move_cursor(tui_textarea::CursorMove::Up);
+        self.textarea.move_cursor(tui_textarea::CursorMove::Head);
+
+        // Select both lines (previous and current)
+        self.textarea.start_selection();
+        self.textarea.move_cursor(tui_textarea::CursorMove::Down);
+        self.textarea.move_cursor(tui_textarea::CursorMove::End);
+
+        // Delete both lines
+        self.textarea.cut();
+
+        // Insert in swapped order: current line first, then previous line
+        self.textarea.insert_str(&current_line);
+        self.textarea.insert_newline();
+        self.textarea.insert_str(&prev_line);
+
+        // Move cursor back to the moved line (now one row up) at the same column
+        self.textarea.move_cursor(tui_textarea::CursorMove::Up);
+        self.textarea.move_cursor(tui_textarea::CursorMove::Head);
+        let new_col = current_col.min(current_line.len());
+        for _ in 0..new_col {
+            self.textarea.move_cursor(tui_textarea::CursorMove::Forward);
+        }
+    }
+
+    fn move_line_down(&mut self) {
+        let (current_row, current_col) = self.textarea.cursor();
+        let lines = self.textarea.lines();
+
+        // Can't move down if already at the last line
+        if current_row + 1 >= lines.len() {
+            return;
+        }
+
+        let current_line = lines[current_row].to_string();
+        let next_line = lines[current_row + 1].to_string();
+
+        // Move to start of current line
+        self.textarea.move_cursor(tui_textarea::CursorMove::Head);
+
+        // Select both lines (current and next)
+        self.textarea.start_selection();
+        self.textarea.move_cursor(tui_textarea::CursorMove::Down);
+        self.textarea.move_cursor(tui_textarea::CursorMove::End);
+
+        // Delete both lines
+        self.textarea.cut();
+
+        // Insert in swapped order: next line first, then current line
+        self.textarea.insert_str(&next_line);
+        self.textarea.insert_newline();
+        self.textarea.insert_str(&current_line);
+
+        // Cursor is now at end of current line (which is now one row down)
+        // Move to the correct column
+        self.textarea.move_cursor(tui_textarea::CursorMove::Head);
+        let new_col = current_col.min(current_line.len());
+        for _ in 0..new_col {
+            self.textarea.move_cursor(tui_textarea::CursorMove::Forward);
+        }
+    }
+
     fn handle_help_key_event(&mut self, key: KeyEvent) {
         let help_lines = get_help_lines();
         let total_lines = help_lines.len();
@@ -490,6 +567,22 @@ impl<'a> App<'a> {
             } => {
                 self.show_help = true;
                 self.help_scroll = 0;
+            }
+            // Move line up: Alt+Up
+            KeyEvent {
+                code: KeyCode::Up,
+                modifiers: KeyModifiers::ALT,
+                ..
+            } => {
+                self.move_line_up();
+            }
+            // Move line down: Alt+Down
+            KeyEvent {
+                code: KeyCode::Down,
+                modifiers: KeyModifiers::ALT,
+                ..
+            } => {
+                self.move_line_down();
             }
             // Exit with output: Alt+Enter
             KeyEvent {
