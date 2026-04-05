@@ -907,7 +907,7 @@ fn main() -> io::Result<()> {
                 let output = content.trim_end_matches(['\r', '\n']);
                 io::stdout().write_all(output.as_bytes())?;
             } else {
-                io.stdout().write_all(content.as_bytes())?;
+                io::stdout().write_all(content.as_bytes())?;
                 io::stdout().write_all(b"\n")?;
             }
         }
